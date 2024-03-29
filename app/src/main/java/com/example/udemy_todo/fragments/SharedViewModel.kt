@@ -1,4 +1,4 @@
-package com.example.udemy_todo.data.viewmodel
+package com.example.udemy_todo.fragments
 
 import android.app.Application
 import android.text.TextUtils
@@ -9,7 +9,6 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import com.example.udemy_todo.R
-import com.example.udemy_todo.data.ToDoDatabase
 import com.example.udemy_todo.data.models.Priority
 import com.example.udemy_todo.data.models.ToDoData
 
@@ -56,11 +55,5 @@ class SharedViewModel(application:Application):AndroidViewModel(application ) {
         }
     }
 
-    fun parsePriorityToInt(priority: Priority):Int {
-        return when(priority) {
-            Priority.HIGH -> 0
-            Priority.MEDIUM -> 1
-            Priority.LOW -> 2
-        }
-    }
+
 }

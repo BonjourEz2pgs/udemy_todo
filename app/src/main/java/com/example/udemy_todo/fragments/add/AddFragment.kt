@@ -1,8 +1,6 @@
 package com.example.udemy_todo.fragments.add
 
 import android.os.Bundle
-import android.text.TextUtils
-import android.util.Log
 import android.view.*
 import android.widget.EditText
 import android.widget.Spinner
@@ -12,16 +10,15 @@ import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.example.udemy_todo.R
 import com.example.udemy_todo.data.ToDoViewModel
-import com.example.udemy_todo.data.models.Priority
 import com.example.udemy_todo.data.models.ToDoData
-import com.example.udemy_todo.data.viewmodel.SharedViewModel
+import com.example.udemy_todo.fragments.SharedViewModel
 
 class AddFragment : Fragment() {
 
     private lateinit var view:View
 
     private val mTodoViewModel:ToDoViewModel by viewModels()
-    private val mSharedViewModel:SharedViewModel by viewModels()
+    private val mSharedViewModel: SharedViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
