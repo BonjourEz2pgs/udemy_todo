@@ -3,24 +3,29 @@ package com.example.udemy_todo.fragments.list
 import android.app.AlertDialog
 import android.os.Bundle
 import android.view.*
+import androidx.appcompat.widget.SearchView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.example.udemy_todo.R
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.example.udemy_todo.data.ToDoViewModel
 import com.example.udemy_todo.data.models.ToDoData
 import com.example.udemy_todo.fragments.SharedViewModel
 import com.example.udemy_todo.databinding.FragmentListBinding
 import com.example.udemy_todo.fragments.list.adapter.ListAdapter
 import com.example.udemy_todo.fragments.list.adapter.SwipeToDelete
+import com.example.udemy_todo.utils.hideKeyboard
 import com.google.android.material.snackbar.Snackbar
+import jp.wasabeef.recyclerview.animators.SlideInUpAnimator
 
 
-class ListFragment : Fragment() {
+class ListFragment : Fragment(), SearchView.OnQueryTextListener {
 
     private val mToDoViewModel: ToDoViewModel by viewModels()
     private val mSharedViewModel: SharedViewModel by viewModels()
@@ -46,23 +51,35 @@ class ListFragment : Fragment() {
         })
 
         setHasOptionsMenu(true)
+        hideKeyboard((requireActivity()))
         return binding.root
     }
 
     private fun setupRecyclerview() {
         val recyclerView:RecyclerView = binding.recyclerView
         recyclerView.adapter = adapter
-        recyclerView.layoutManager = LinearLayoutManager(requireActivity())
+        recyclerView.layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
+        recyclerView.itemAnimator = SlideInUpAnimator().apply{
+            addDuration = 300
+        }
         swipeToDelete(recyclerView)
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         inflater.inflate(R.menu.list_fragment_menu, menu)
+
+        val search = menu.findItem(R.id.menu_search)
+        val searchView = search.actionView as? SearchView
+        searchView?.isSubmitButtonEnabled = true
+        searchView?.setOnQueryTextListener(this)
+
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if(item.itemId == R.id.menu_delete_all) {
-            confirmRemoval()
+        when(item.itemId) {
+            R.id.menu_delete_all -> confirmRemoval()
+            R.id.menu_priority_high -> mToDoViewModel.sortByHighPriority.observe(this, Observer{adapter.setData(it)})
+            R.id.menu_priority_low -> mToDoViewModel.sortByLowPriority.observe(this, Observer{adapter.setData(it)})
         }
         return super.onOptionsItemSelected(item)
     }
@@ -94,22 +111,44 @@ class ListFragment : Fragment() {
                 val deletedItem = adapter.dataList[viewHolder.adapterPosition]
                 mToDoViewModel.deleteItem(deletedItem)
                 adapter.notifyItemRemoved(viewHolder.adapterPosition)
-                restoreDeleteData(viewHolder.itemView, deletedItem, viewHolder.adapterPosition)
+                restoreDeleteData(viewHolder.itemView, deletedItem)
             }
         }
         val itemTouchHelper = ItemTouchHelper(swipeToDeleteCallback)
         itemTouchHelper.attachToRecyclerView(recyclerView)
     }
 
-    private fun restoreDeleteData(view:View, deleteItem:ToDoData, position:Int) {
+    private fun restoreDeleteData(view:View, deleteItem:ToDoData) {
         val snackBar = Snackbar.make(
             view, "Deleted '${deleteItem.title}'",
             Snackbar.LENGTH_LONG
         )
         snackBar.setAction("Undo") {
             mToDoViewModel.insertData(deleteItem)
-            adapter.notifyItemChanged(position)
         }
         snackBar.show()
+    }
+
+    override fun onQueryTextSubmit(query: String?): Boolean {
+        if (query != null) {
+            searchThroughDatabase(query)
+        }
+        return true
+    }
+
+    private fun searchThroughDatabase(query: String) {
+        val searchQuery = "%$query%"
+        mToDoViewModel.searchDatabase(searchQuery).observe(this, Observer{ list ->
+            list?.let{
+                adapter.setData(it)
+            }
+        })
+    }
+
+    override fun onQueryTextChange(query: String?): Boolean {
+        if (query != null) {
+            searchThroughDatabase(query)
+        }
+        return true
     }
 }
